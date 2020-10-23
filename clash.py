@@ -12,6 +12,7 @@ class ClashMediator:
 
     def __init__(self):
         self._process: subprocess.Popen = None
+        self._is_running = False
 
     def start(self, kill_if_is_running: bool = True, output_callback=None, end_callback=None):
         if kill_if_is_running and self._process:
@@ -28,15 +29,16 @@ class ClashMediator:
             stdin=subprocess.PIPE,
             universal_newlines=True
         )
-
+        self._is_running = True
         while True:
             output = self._process.stdout.readline().strip()
-            print(output)
+            # print(output)
             output_callback(output)
 
             return_code = self._process.poll()
             if return_code is not None:
-                print('RETURN CODE', return_code)
+                self._is_running = False
+                # print('RETURN CODE', return_code)
                 output_callback("returned with code {}".format(return_code))
                 # Process has finished, read rest of the output
                 for output in self._process.stdout.readlines():
@@ -45,7 +47,11 @@ class ClashMediator:
                 break
 
     def kill(self) -> bool:
+        self._is_running = False
         if self._process:
             self._process.kill()
             return True
         return False
+
+    def is_running(self):
+        return self._is_running
